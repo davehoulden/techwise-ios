@@ -2,6 +2,10 @@
   "appId": "com.techwise.divelog",
   "appName": "TechWise",
   "webDir": "dist",
+  "server": {
+    "url": "https://davehoulden.com",
+    "cleartext": false
+  },
   "ios": {
     "contentInset": "always"
   },
