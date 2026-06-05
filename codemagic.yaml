@@ -7,8 +7,9 @@
 #      uploading an App Store Connect API key (.p8) from
 #      https://appstoreconnect.apple.com/access/integrations/api
 #      Name it exactly:  techwise_app_store_connect   (or change the name below)
-#   3. That's it — Codemagic will auto-create the bundle ID and a managed
-#      distribution provisioning profile for com.techwise.divelog.
+#   3. The API key must have App Manager (or Admin) access so the build can
+#      create the bundle ID, distribution certificate, and provisioning
+#      profile for com.techwise.divelog automatically on first run.
 
 workflows:
   ios-testflight:
@@ -18,9 +19,6 @@ workflows:
     integrations:
       app_store_connect: techwise_app_store_connect
     environment:
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.techwise.divelog
       vars:
         # Non-secret Base44 client config (also embedded in the JS bundle anyway).
         # Vite inlines any VITE_-prefixed env var at build time.
@@ -37,8 +35,14 @@ workflows:
         script: npm run build
       - name: Sync web build into the iOS project
         script: npx cap sync ios
-      - name: Set up code signing
-        script: xcode-project use-profiles
+      - name: Set up code signing (create cert + profile if missing)
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create
+          keychain add-certificates
+          xcode-project use-profiles
       - name: Set build number
         script: |
           cd ios/App
