@@ -19,6 +19,8 @@ workflows:
     integrations:
       app_store_connect: techwise_app_store_connect
     environment:
+      groups:
+        - signing            # must contain the secure var CERTIFICATE_PRIVATE_KEY
       vars:
         # Non-secret Base44 client config (also embedded in the JS bundle anyway).
         # Vite inlines any VITE_-prefixed env var at build time.
@@ -38,8 +40,13 @@ workflows:
       - name: Set up code signing (create cert + profile if missing)
         script: |
           keychain initialize
+          # CERTIFICATE_PRIVATE_KEY is a secure env var (the PEM key) set in the
+          # Codemagic UI. With --certificate-key + --create, the build creates an
+          # iOS Distribution certificate from this key on first run, then reuses
+          # the same cert on later runs (no duplicate certs, no hitting Apple's limit).
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
+            --certificate-key=@env:CERTIFICATE_PRIVATE_KEY \
             --create
           keychain add-certificates
           xcode-project use-profiles
