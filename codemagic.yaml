@@ -1,0 +1,57 @@
+# Codemagic CI/CD pipeline: builds the TechWise Capacitor app on a cloud Mac,
+# code-signs it, and uploads it to TestFlight. No local Mac required.
+#
+# BEFORE YOUR FIRST BUILD, in the Codemagic UI you must:
+#   1. Connect this Git repository.
+#   2. Add an "App Store Connect" integration (Teams > Integrations) by
+#      uploading an App Store Connect API key (.p8) from
+#      https://appstoreconnect.apple.com/access/integrations/api
+#      Name it exactly:  techwise_app_store_connect   (or change the name below)
+#   3. That's it — Codemagic will auto-create the bundle ID and a managed
+#      distribution provisioning profile for com.techwise.divelog.
+
+workflows:
+  ios-testflight:
+    name: TechWise iOS → TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: techwise_app_store_connect
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.techwise.divelog
+      vars:
+        # Non-secret Base44 client config (also embedded in the JS bundle anyway).
+        # Vite inlines any VITE_-prefixed env var at build time.
+        VITE_BASE44_APP_ID: "69a60091c4b89373f8f7404c"
+        VITE_BASE44_APP_BASE_URL: "https://app.base44.com"
+        BUNDLE_ID: "com.techwise.divelog"
+        XCODE_SCHEME: "App"
+      node: 22
+      xcode: latest
+    scripts:
+      - name: Install npm dependencies
+        script: npm ci
+      - name: Build web app (Vite)
+        script: npm run build
+      - name: Sync web build into the iOS project
+        script: npx cap sync ios
+      - name: Set up code signing
+        script: xcode-project use-profiles
+      - name: Set build number
+        script: |
+          cd ios/App
+          agvtool new-version -all "$BUILD_NUMBER"
+      - name: Build signed .ipa
+        script: |
+          xcode-project build-ipa \
+            --project "ios/App/App.xcodeproj" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true

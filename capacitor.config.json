@@ -1,0 +1,13 @@
+{
+  "appId": "com.techwise.divelog",
+  "appName": "TechWise",
+  "webDir": "dist",
+  "ios": {
+    "contentInset": "always"
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
+}
