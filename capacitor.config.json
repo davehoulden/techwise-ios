@@ -4,7 +4,19 @@
   "webDir": "dist",
   "server": {
     "url": "https://davehoulden.com",
-    "cleartext": false
+    "cleartext": false,
+    "allowNavigation": [
+      "davehoulden.com",
+      "base44.com",
+      "*.base44.com",
+      "*.base44.app",
+      "accounts.google.com",
+      "*.google.com",
+      "*.googleusercontent.com",
+      "login.microsoftonline.com",
+      "login.live.com",
+      "*.microsoftonline.com"
+    ]
   },
   "ios": {
     "contentInset": "always",
